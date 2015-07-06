@@ -1,0 +1,21 @@
+{
+  "name": "probeit",
+  "version": "0.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jasmine-node --forceexit test",
+    "dev": "jasmine-node --autotest --verbose --color --forceexit test --watch ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "codeclimate-test-reporter": "^0.1.0",
+    "jasmine-node": "^1.14.5",
+    "request": "^2.58.0"
+  },
+  "dependencies": {
+    "express": "^4.13.1"
+  }
+}
