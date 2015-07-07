@@ -12,10 +12,14 @@
   "license": "ISC",
   "devDependencies": {
     "codeclimate-test-reporter": "^0.1.0",
+    "grunt": "^0.4.5",
+    "grunt-contrib-uglify": "^0.9.1",
+    "grunt-coveralls": "^1.0.0",
+    "grunt-jasmine-node": "^0.3.1",
     "jasmine-node": "^1.14.5",
     "request": "^2.58.0"
   },
   "dependencies": {
-    "express": "^4.13.1"
+    "express": "^4.13.1",
   }
 }
