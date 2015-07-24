@@ -1,0 +1,9 @@
+app:
+  image: golang:1.4
+  ports:
+      - "8000:3000"
+  working_dir: /go/src/github.com/sdiawara/probeit
+  command: go run main.go
+  volumes:
+      - .:/go/src/github.com/sdiawara/probeit
+
