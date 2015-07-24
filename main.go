@@ -6,7 +6,8 @@ import (
 )
 
 func HelloHandler(writer http.ResponseWriter, request *http.Request) {
-	writer.Write([]byte("Hello World!"))
+    staticFilesHandler := http.FileServer(http.Dir("static"))
+    staticFilesHandler.ServeHTTP(writer, request)
 }
 
 func main() {
