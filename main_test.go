@@ -83,7 +83,8 @@ func TestListProbe(testing *testing.T) {
 }
 
 func TestRespondProbe(testing *testing.T) {
-	CreateProbe(httptest.NewRecorder(), createRequest(`{"Question":"Aimez-vous golang ?"}`))
+    collection.RemoveAll(bson.M{})
+	CreateProbe(httptest.NewRecorder(), createRequest(`{"Question":"Aimez-vouuuuuuuuuuuuuuuuuuuuuuus golang ?"}`))
 	probe := findOneProbe()
 	request := createRequest(`{"probe_id": "` + probe.Id.Hex() + `", "Responses": "Oui"}`)
 
