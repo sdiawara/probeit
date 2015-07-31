@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/sdiawara/probeit/models"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
-    "gopkg.in/mgo.v2/bson"
 )
 
 func HelloHandler(writer http.ResponseWriter, request *http.Request) {
@@ -26,15 +26,14 @@ func RespondProbe(writer http.ResponseWriter, request *http.Request) {
 
 	decoder := json.NewDecoder(request.Body)
 	var requestParam map[string]string
-    
+
 	err = decoder.Decode(&requestParam)
 	if err != nil {
 		panic(err)
 	}
-    fmt.Printf("Erreur au démarrage du serveur : %s\n", requestParam["probe_id"])
 
-    update := bson.M{"$push": bson.M{"responses": requestParam["Responses"]}}
-	err = c.Update(bson.M{"_id" : bson.ObjectIdHex(requestParam["probe_id"])}, update)
+	update := bson.M{"$push": bson.M{"responses": requestParam["Responses"]}}
+	err = c.Update(bson.M{"_id": bson.ObjectIdHex(requestParam["probe_id"])}, update)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,6 +59,30 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func ListProbe(writer http.ResponseWriter, request *http.Request) {
+	session, err := mgo.Dial("localhost")
+	if err != nil {
+		panic(err)
+	}
+	defer session.Close()
+
+	c := session.DB("test").C("probe")
+
+	encoder := json.NewEncoder(writer)
+	var probes []models.Probe
+
+	err = c.Find(bson.M{}).All(&probes)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = encoder.Encode(&probes)
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func main() {

@@ -2,17 +2,49 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/sdiawara/probeit/models"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 )
 
-func TestMain(testing *testing.T) {
+var status int
+var session *mgo.Session
+var collection *mgo.Collection
+
+func TestMain(m *testing.M) {
+	before()
+	status = m.Run()
+	after()
+	os.Exit(status)
+}
+
+func before() {
+	var err error
+	session, err = mgo.Dial("localhost")
+	if err != nil {
+		panic(err)
+	}
+	collection = session.DB("test").C("probe")
+
+}
+
+func after() {
+	if collection != nil {
+		collection.RemoveAll(bson.M{})
+	}
+	if session != nil {
+		session.Close()
+	}
+}
+
+func TestHelloHandler(testing *testing.T) {
 	writer := httptest.NewRecorder()
 	request, _ := http.NewRequest("", "/", strings.NewReader(""))
 
@@ -31,16 +63,35 @@ func TestCreateProbe(testing *testing.T) {
 	assert.Equal(testing, "Aimez-vous golang ?", probe.Question)
 }
 
+func TestListProbe(testing *testing.T) {
+	collection.RemoveAll(bson.M{})
+	expectedProbe := models.Probe{"", "Is this test ok ?", []string{}}
+	collection.Insert(expectedProbe)
+
+	writer := httptest.NewRecorder()
+	request, _ := http.NewRequest("", "/", strings.NewReader(""))
+
+	ListProbe(writer, request)
+
+	decoder := json.NewDecoder(writer.Body)
+	var probes []models.Probe
+	decoder.Decode(&probes)
+
+	assert.Equal(testing, 1, len(probes))
+	assert.Equal(testing, expectedProbe.Question, probes[0].Question)
+	assert.Equal(testing, expectedProbe.Responses, probes[0].Responses)
+}
+
 func TestRespondProbe(testing *testing.T) {
 	CreateProbe(nil, createRequest(`{"Question":"Aimez-vous golang ?"}`))
 	probe := findOneProbe()
-	request := createRequest(`{"probe_id": "` + probe.Id.Hex() + `", "Responses": "OK"}`)
+	request := createRequest(`{"probe_id": "` + probe.Id.Hex() + `", "Responses": "Oui"}`)
 
 	RespondProbe(nil, request)
 
-    probe = findOneProbeAndRemoveIt()
+	probe = findOneProbeAndRemoveIt()
 	assert.Equal(testing, 1, len(probe.Responses))
-	assert.Equal(testing, "OK", probe.Responses[0])
+	assert.Equal(testing, "Oui", probe.Responses[0])
 }
 
 func createRequest(param string) (request *http.Request) {
@@ -49,31 +100,14 @@ func createRequest(param string) (request *http.Request) {
 	return
 }
 
-func getCollection() (collection *mgo.Collection) {
-	session, err := mgo.Dial("localhost")
-	if err != nil {
-		panic(err)
-	}
-
-	collection = session.DB("test").C("probe")
-	return
-}
-
-
-func findById(id string) (probe *models.Probe) {
-	probe = &models.Probe{}
-	getCollection().Find(bson.M{"_id" : bson.ObjectIdHex(id)}).One(probe)
-	return
-}
-
 func findOneProbe() (probe *models.Probe) {
 	probe = &models.Probe{}
-	getCollection().Find(bson.M{}).One(probe)
+	collection.Find(bson.M{}).One(probe)
 	return
 }
 
 func findOneProbeAndRemoveIt() (probe *models.Probe) {
 	probe = findOneProbe()
-	getCollection().Remove(bson.M{})
+	collection.Remove(bson.M{})
 	return
 }
