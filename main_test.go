@@ -57,7 +57,7 @@ func TestHelloHandler(testing *testing.T) {
 func TestCreateProbe(testing *testing.T) {
 	request := createRequest(`{"Question":"Aimez-vous golang ?"}`)
 
-	CreateProbe(nil, request)
+	CreateProbe(httptest.NewRecorder(), request)
 
 	probe := findOneProbeAndRemoveIt()
 	assert.Equal(testing, "Aimez-vous golang ?", probe.Question)
@@ -83,7 +83,7 @@ func TestListProbe(testing *testing.T) {
 }
 
 func TestRespondProbe(testing *testing.T) {
-	CreateProbe(nil, createRequest(`{"Question":"Aimez-vous golang ?"}`))
+	CreateProbe(httptest.NewRecorder(), createRequest(`{"Question":"Aimez-vous golang ?"}`))
 	probe := findOneProbe()
 	request := createRequest(`{"probe_id": "` + probe.Id.Hex() + `", "Responses": "Oui"}`)
 

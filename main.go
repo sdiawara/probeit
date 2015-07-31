@@ -48,9 +48,11 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 
 	c := session.DB("test").C("probe")
 
-	decoder := json.NewDecoder(request.Body)
+	p := make([]byte, request.ContentLength)
+	request.Body.Read(p)
+
 	var probe models.Probe
-	err = decoder.Decode(&probe)
+	err = json.Unmarshal(p, &probe)
 	if err != nil {
 		panic(err)
 	}
@@ -59,6 +61,8 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Fprint(writer, "ok")
 }
 
 func ListProbe(writer http.ResponseWriter, request *http.Request) {
@@ -87,6 +91,7 @@ func ListProbe(writer http.ResponseWriter, request *http.Request) {
 
 func main() {
 	http.HandleFunc("/", HelloHandler)
+	http.HandleFunc("/CreateProbe", CreateProbe)
 	fmt.Printf("Running on port 3000...\n")
 	err := http.ListenAndServe(":3000", nil)
 	if err != nil {
