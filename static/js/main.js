@@ -1,15 +1,24 @@
+$.prototype.notifySuccess = function (message, position) {
+	this.notify(message, 'success', { position: position || 'bottom'});
+};
+
+$.prototype.notifyError = function (message, position) {
+	this.notify(message, 'error', { position: position || 'bottom'});
+};
+
 function createProbe() {
-	var question = $('#question').val()
+	var questionInput = $('#question');
+	var question = questionInput.val()
+	
 	if(! question ) {
-		$('#question').notify(
-		  'Vous devez remplir le champs de texte pour publier une question !',
-		  {position:'bottom', className: "error" }
-		);
-		return
+		return questionInput.notifyError('Vous devez remplir le champs de texte pour publier une question !');
 	}
 	
-	$.post('/CreateProbe', '{"question" : "' + question +'"}', function() {
-		$('#question').notify('Votre question a bien été publié.', 'success', { position: 'bottom'});
-		$('#question').val('')
+	var probeJson =  JSON.stringify({question : question});
+	$.post('/CreateProbe', probeJson).success(function() {
+		questionInput.notifySuccess('Votre question a bien été publié.');
+		questionInput.val('')
+	}).error(function() {
+		questionInput.notifyError('Vous devez remplir le champs de texte pour publier une question !');
 	});
 }

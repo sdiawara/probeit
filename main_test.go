@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"github.com/sdiawara/probeit/models"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +16,7 @@ import (
 var status int
 var session *mgo.Session
 var collection *mgo.Collection
+var expectedProbe models.Probe
 
 func TestMain(m *testing.M) {
 	before()
@@ -26,13 +26,14 @@ func TestMain(m *testing.M) {
 }
 
 func before() {
+	expectedProbe = models.Probe{"", "Is this test ok ?", []string{}}
 	var err error
 	session, err = mgo.Dial("localhost")
 	if err != nil {
 		panic(err)
 	}
 	collection = session.DB("test").C("probe")
-
+	collection.RemoveAll(bson.M{})
 }
 
 func after() {
@@ -44,60 +45,79 @@ func after() {
 	}
 }
 
-func TestHelloHandler(testing *testing.T) {
-	writer := httptest.NewRecorder()
-	request, _ := http.NewRequest("", "/", strings.NewReader(""))
+func TestStaticFilesHandler(testing *testing.T) {
+	writer, request := createTestResponseAndRequest("")
 
-	HelloHandler(writer, request)
+	StaticFilesHandler(writer, request)
 
 	assert.Equal(testing, true, strings.Contains(writer.Body.String(), "<img alt=\"logo\" src=\"/images/logo.svg\" id=\"logo\" width=\"150px\" />"))
 	assert.Equal(testing, true, strings.Contains(writer.Body.String(), "<h1 class=\"cover-heading\">Nous les sondons pour vous.</h1>"))
 }
 
 func TestCreateProbe(testing *testing.T) {
-	request := createRequest(`{"Question":"Aimez-vous golang ?"}`)
+	writer, request := createTestResponseAndRequest(`{"Question":"Do you like golang ?"}`)
 
-	CreateProbe(httptest.NewRecorder(), request)
+	CreateProbe(writer, request)
 
 	probe := findOneProbeAndRemoveIt()
-	assert.Equal(testing, "Aimez-vous golang ?", probe.Question)
+	assert.Equal(testing, "Do you like golang ?", probe.Question)
+	assert.Equal(testing, http.StatusOK, writer.Code)
+}
+
+func TestCanNotCreateInvalidProbe(testing *testing.T) {
+	writer, request := createTestResponseAndRequest(`{"Question":""}`)
+
+	CreateProbe(writer, request)
+
+	assert.Equal(testing, http.StatusBadRequest, writer.Code)
 }
 
 func TestListProbe(testing *testing.T) {
 	collection.RemoveAll(bson.M{})
-	expectedProbe := models.Probe{"", "Is this test ok ?", []string{}}
 	collection.Insert(expectedProbe)
-
-	writer := httptest.NewRecorder()
-	request, _ := http.NewRequest("", "/", strings.NewReader(""))
+	writer, request := createTestResponseAndRequest("")
 
 	ListProbe(writer, request)
 
-	decoder := json.NewDecoder(writer.Body)
-	var probes []models.Probe
-	decoder.Decode(&probes)
-
+	probes := decode(writer)
 	assert.Equal(testing, 1, len(probes))
 	assert.Equal(testing, expectedProbe.Question, probes[0].Question)
 	assert.Equal(testing, expectedProbe.Responses, probes[0].Responses)
 }
 
+type ProbeResponse struct {
+	ProbeId  bson.ObjectId `json:"probe_id"`
+	Response string
+}
+
 func TestRespondProbe(testing *testing.T) {
-    collection.RemoveAll(bson.M{})
-	CreateProbe(httptest.NewRecorder(), createRequest(`{"Question":"Aimez-vouuuuuuuuuuuuuuuuuuuuuuus golang ?"}`))
-	probe := findOneProbe()
-	request := createRequest(`{"probe_id": "` + probe.Id.Hex() + `", "Responses": "Oui"}`)
+	collection.RemoveAll(bson.M{})
+	insertId := bson.ObjectIdHex("000000000000000000000000")
+	collection.Insert(models.Probe{insertId, "Aimez-vous golang ?", []string{}})
+	request := createRequest(ProbeResponse{insertId, "Oui"})
 
 	RespondProbe(nil, request)
 
-	probe = findOneProbeAndRemoveIt()
+	probe := findOneProbeAndRemoveIt()
 	assert.Equal(testing, 1, len(probe.Responses))
 	assert.Equal(testing, "Oui", probe.Responses[0])
 }
 
-func createRequest(param string) (request *http.Request) {
-	probeJson := []byte(param)
-	request, _ = http.NewRequest("", "/", bytes.NewBuffer(probeJson))
+func decode(writer *httptest.ResponseRecorder) (probes []models.Probe) {
+	decoder := json.NewDecoder(writer.Body)
+	decoder.Decode(&probes)
+	return
+}
+
+func createRequest(probeResponse ProbeResponse) (request *http.Request) {
+	probeResponseJson, _ := json.Marshal(probeResponse)
+	request, _ = http.NewRequest("", "/", strings.NewReader(string(probeResponseJson)))
+	return
+}
+
+func createTestResponseAndRequest(data string) (writer *httptest.ResponseRecorder, request *http.Request) {
+	writer = httptest.NewRecorder()
+	request, _ = http.NewRequest("", "/", strings.NewReader(data))
 	return
 }
 
