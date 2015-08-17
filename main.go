@@ -35,9 +35,6 @@ func RespondProbe(writer http.ResponseWriter, request *http.Request) {
 }
 
 func CreateProbe(writer http.ResponseWriter, request *http.Request) {
-	session, c := getSessionAndProbeCollection()
-	defer session.Close()
-
 	p := make([]byte, request.ContentLength)
 	request.Body.Read(p)
 
@@ -48,11 +45,7 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	if probe.Question != "" {
-		err = c.Insert(probe)
-		if err != nil {
-			log.Fatal(err)
-		}
-
+		probe.Save()
 		fmt.Fprint(writer, "ok")
 	} else {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -60,16 +53,9 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ListProbe(writer http.ResponseWriter, request *http.Request) {
-	session, c := getSessionAndProbeCollection()
-	defer session.Close()
+	probes := models.AllProbes()
 
-	var probes []models.Probe
-	err := c.Find(bson.M{}).All(&probes)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = json.NewEncoder(writer).Encode(&probes)
+	err := json.NewEncoder(writer).Encode(&probes)
 	if err != nil {
 		log.Fatal(err)
 	}

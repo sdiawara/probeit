@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 }
 
 func before() {
-	expectedProbe = models.Probe{"", "Is this test ok ?", []string{}}
+	expectedProbe = models.NewProbe("Is this test ok ?", []string{})
 	var err error
 	session, err = mgo.Dial("localhost")
 	if err != nil {
@@ -85,22 +85,18 @@ func TestListProbe(testing *testing.T) {
 	assert.Equal(testing, expectedProbe.Responses, probes[0].Responses)
 }
 
-type ProbeResponse struct {
-	ProbeId  bson.ObjectId `json:"probe_id"`
-	Response string
-}
-
 func TestRespondProbe(testing *testing.T) {
 	collection.RemoveAll(bson.M{})
-	insertId := bson.ObjectIdHex("000000000000000000000000")
-	collection.Insert(models.Probe{insertId, "Aimez-vous golang ?", []string{}})
-	request := createRequest(ProbeResponse{insertId, "Oui"})
+	probe := models.NewProbe("Aimez-vous golang ?", []string{})
+	probe.Id = bson.NewObjectId()
+	collection.Insert(probe)
+	request := createRequest(models.ProbeResponse{probe.Id, "Oui"})
 
 	RespondProbe(nil, request)
 
-	probe := findOneProbeAndRemoveIt()
-	assert.Equal(testing, 1, len(probe.Responses))
-	assert.Equal(testing, "Oui", probe.Responses[0])
+	actualProbe := findOneProbeAndRemoveIt()
+	assert.Equal(testing, 1, len(actualProbe.Responses))
+	assert.Equal(testing, "Oui", actualProbe.Responses[0])
 }
 
 func decode(writer *httptest.ResponseRecorder) (probes []models.Probe) {
@@ -109,7 +105,7 @@ func decode(writer *httptest.ResponseRecorder) (probes []models.Probe) {
 	return
 }
 
-func createRequest(probeResponse ProbeResponse) (request *http.Request) {
+func createRequest(probeResponse models.ProbeResponse) (request *http.Request) {
 	probeResponseJson, _ := json.Marshal(probeResponse)
 	request, _ = http.NewRequest("", "/", strings.NewReader(string(probeResponseJson)))
 	return
