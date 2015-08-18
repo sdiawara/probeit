@@ -68,7 +68,7 @@ func main() {
 	http.HandleFunc("/polls", template.PollTemplateHandler)
 	port := "3000"
 	fmt.Printf("Running on port %s...\n", port)
-	err := http.ListenAndServe(":" + port, nil)
+	err := http.ListenAndServe(":"+port, nil)
 	if err != nil {
 		fmt.Printf("Erreur au démarrage du serveur : %s\n", err.Error())
 	}
