@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sdiawara/probeit/models"
+	"github.com/sdiawara/probeit/template"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
-	"html/template"
 )
 
 func StaticFilesHandler(writer http.ResponseWriter, request *http.Request) {
@@ -62,23 +62,13 @@ func getSessionAndProbeCollection() (*mgo.Session, *mgo.Collection) {
 	return session, collection
 }
 
-type PollsPage struct {Polls []models.Probe}
-
-func PollTemplateHandler(writer http.ResponseWriter, request *http.Request) {
-	tmpl := template.Must(template.New("poll").ParseFiles("static/polls.html"))
-	
-	pageParam := PollsPage{Polls: models.AllProbes()}
-	if err := tmpl.Execute(writer, pageParam); err != nil {
-		log.Fatalf("Erreur dans le template : %s", err.Error())
-	}
-}
-
 func main() {
 	http.HandleFunc("/", StaticFilesHandler)
 	http.HandleFunc("/CreateProbe", CreateProbe)
-	http.HandleFunc("/polls", PollTemplateHandler)
-	fmt.Printf("Running on port 3000...\n")
-	err := http.ListenAndServe(":3000", nil)
+	http.HandleFunc("/polls", template.PollTemplateHandler)
+	port := "3000"
+	fmt.Printf("Running on port %s...\n", port)
+	err := http.ListenAndServe(":" + port, nil)
 	if err != nil {
 		fmt.Printf("Erreur au démarrage du serveur : %s\n", err.Error())
 	}

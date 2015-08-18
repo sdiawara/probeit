@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/sdiawara/probeit/models"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
@@ -9,7 +10,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
-	"encoding/json"
 	"testing"
 )
 
@@ -37,7 +37,7 @@ func before() {
 }
 
 func after() {
-	if collection == nil {		
+	if collection == nil {
 		collection.RemoveAll(bson.M{})
 	}
 	if session != nil {
