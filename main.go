@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"log"
 	"net/http"
+	"html/template"
 )
 
 func HelloHandler(writer http.ResponseWriter, request *http.Request) {
@@ -61,7 +62,7 @@ func CreateProbe(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func ListProbe(writer http.ResponseWriter, request *http.Request) {
+func ListProbe(request *http.Request) (probes []models.Probe) {
 	session, err := mgo.Dial("localhost")
 	if err != nil {
 		panic(err)
@@ -70,23 +71,27 @@ func ListProbe(writer http.ResponseWriter, request *http.Request) {
 
 	c := session.DB("test").C("probe")
 
-	encoder := json.NewEncoder(writer)
-	var probes []models.Probe
-
 	err = c.Find(bson.M{}).All(&probes)
 	if err != nil {
 		log.Fatal(err)
 	}
+	return
+}
 
-	err = encoder.Encode(&probes)
-	if err != nil {
-		panic(err)
+type PollsPage struct {Polls []models.Probe}
+
+func PollTemplateHandler(writer http.ResponseWriter, request *http.Request) {
+	tmpl := template.Must(template.New("poll").ParseFiles("static/polls.html"))
+	
+	pageParam := PollsPage{Polls: ListProbe(request)}
+	if err := tmpl.Execute(writer, pageParam); err != nil {
+		log.Fatalf("Erreur dans le template : %s", err.Error())
 	}
-
 }
 
 func main() {
 	http.HandleFunc("/", HelloHandler)
+	http.HandleFunc("/polls", PollTemplateHandler)
 	fmt.Printf("Running on port 3000...\n")
 	err := http.ListenAndServe(":3000", nil)
 	if err != nil {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"github.com/sdiawara/probeit/models"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
@@ -36,7 +35,7 @@ func before() {
 }
 
 func after() {
-	if collection != nil {
+	if collection == nil {		
 		collection.RemoveAll(bson.M{})
 	}
 	if session != nil {
@@ -68,18 +67,13 @@ func TestListProbe(testing *testing.T) {
 	expectedProbe := models.Probe{"", "Is this test ok ?", []string{}}
 	collection.Insert(expectedProbe)
 
-	writer := httptest.NewRecorder()
 	request, _ := http.NewRequest("", "/", strings.NewReader(""))
 
-	ListProbe(writer, request)
+	polls := ListProbe(request)
 
-	decoder := json.NewDecoder(writer.Body)
-	var probes []models.Probe
-	decoder.Decode(&probes)
-
-	assert.Equal(testing, 1, len(probes))
-	assert.Equal(testing, expectedProbe.Question, probes[0].Question)
-	assert.Equal(testing, expectedProbe.Responses, probes[0].Responses)
+	assert.Equal(testing, 1, len(polls))
+	assert.Equal(testing, expectedProbe.Question, polls[0].Question)
+	assert.Equal(testing, expectedProbe.Responses, polls[0].Responses)
 }
 
 func TestRespondProbe(testing *testing.T) {

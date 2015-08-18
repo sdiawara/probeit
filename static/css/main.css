@@ -1,3 +1,19 @@
+.poll-container {
+	padding: 20px;
+	border: solid 1px;
+	margin: 10px;
+}
+
+.question {
+	font-size: 20px;
+	font-weight: bold;
+}
+
+.response {
+	margin-left: 4px;
+	font-size: 16px;
+}
+
 /*
  * Globals
  */
