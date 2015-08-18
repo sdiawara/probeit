@@ -15,16 +15,28 @@
         <link rel="stylesheet" href="/css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="/css/main.css">
 
+        <script src="js/vendor/jquery-1.11.2.min.js"></script>
         <script src="js/vendor/modernizr-2.8.3-respond-1.4.2.min.js"></script>
+        <script src="js/vendor/notify.min.js"></script>
+        <script src="js/main.js"></script>
     </head>
     <body>
         <div class="site-wrapper">
           <div class="site-wrapper-inner">
-            <div class="cover-container">
+            <div class="container">
+          	  <div class="cover-container">
               <div class="inner cover">
                 <img alt="logo" src="/images/logo.svg" id="logo" width="150px" />
                 <h1 class="cover-heading">Nous les sondons pour vous.</h1>
                 <p class="lead">Vous vous posez des questions? Laissez-nous les poser à d'autres! Ils pensent peut être comme vous.</p>
+              </div>
+			<div class="con">
+	            <form class="form-inline">
+				  <div class="form-group">
+				    <input type="text" class="form-control col-lg-12" id="question" placeholder="Tapez votre question">
+				  </div>
+				  <a class="btn btn-default" onClick="createProbe()">Poser la question?</a>
+				</form>
               </div>
               <div class="mastfoot">
                 <div class="inner">
@@ -32,6 +44,7 @@
                 </div>
               </div>
             </div>
+          	</div>
           </div>
         </div>
     </body>
